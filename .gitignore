@@ -25,6 +25,12 @@ Thumbs.db
 /.fleet
 /.idea
 /.nova
+/.junie
+/.cursor
+/.claude
+CLAUDE.md
+boost.json
+.mcp.json
 /.phpunit.cache
 /.vscode
 /.zed
