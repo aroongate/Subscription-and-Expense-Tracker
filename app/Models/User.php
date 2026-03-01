@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use App\Enums\OrganizationRole;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -59,5 +60,36 @@ class User extends Authenticatable
     public function ownedOrganizations(): HasMany
     {
         return $this->hasMany(Organization::class, 'owner_user_id');
+    }
+
+    public function createdExpenses(): HasMany
+    {
+        return $this->hasMany(Expense::class, 'created_by_user_id');
+    }
+
+    public function roleInOrganization(Organization|int $organization): ?OrganizationRole
+    {
+        $organizationId = $organization instanceof Organization ? $organization->id : $organization;
+
+        $org = $this->organizations()
+            ->where('organizations.id', $organizationId)
+            ->first();
+
+        if (! $org || ! isset($org->pivot->role)) {
+            return null;
+        }
+
+        return OrganizationRole::tryFrom($org->pivot->role);
+    }
+
+    public function hasAnyOrganizationRole(Organization|int $organization, array $roles): bool
+    {
+        $role = $this->roleInOrganization($organization);
+
+        if (! $role) {
+            return false;
+        }
+
+        return in_array($role->value, $roles, true);
     }
 }
